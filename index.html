@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Student Enrollment Form</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+  />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <script src="https://login2explore.com/jpdb/resources/js/0.0.3/jpdb-commons.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Student Enrollment Form</h2>
+    <form id="stuForm" method="post">
+      <div class="form-group">
+        <label for="stuId">Roll-No:</label>
+        <input
+          type="text"
+          class="form-control"
+          name="stuId"
+          id="stuId"
+          placeholder="Enter Roll-No"
+          onchange="getStu();"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="stuName">Full Name:</label>
+        <input
+          type="text"
+          class="form-control"
+          id="stuName"
+          placeholder="Enter Full Name"
+          name="stuName"
+          disabled
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="stuClass">Class:</label>
+        <input
+          type="text"
+          class="form-control"
+          id="stuClass"
+          placeholder="Enter Class"
+          name="stuClass"
+          disabled
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="stuDOB">Birth-Date:</label>
+        <input
+          type="date"
+          class="form-control"
+          id="stuDOB"
+          name="stuDOB"
+          disabled
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="stuAddress">Address:</label>
+        <input
+          type="text"
+          class="form-control"
+          id="stuAddress"
+          placeholder="Enter Address"
+          name="stuAddress"
+          disabled
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="stuEnrollDate">Enrollment-Date:</label>
+        <input
+          type="date"
+          class="form-control"
+          id="stuEnrollDate"
+          name="stuEnrollDate"
+          disabled
+        />
+      </div>
+
+      <input
+        type="button"
+        class="btn btn-primary"
+        id="empSave"
+        value="Save"
+        onclick="saveData();"
+        disabled
+      />
+      <input
+        type="button"
+        class="btn btn-primary"
+        id="empChange"
+        value="Change"
+        onclick="changeData();"
+        disabled
+      />
+      <input
+        type="button"
+        class="btn btn-primary"
+        id="empReset"
+        value="Reset"
+        onclick="resetForm();"
+      />
+    </form>
+  </div>
+
+  <script>
+    const connToken = "90934455|-31949228901437421|90956955";
+    const stuDBName = "SCHOOL-DB";
+    const stuRelationName = "STUDENT-TABLE";
+    const jpdbBaseURL = "http://api.login2explore.com:5577";
+    const jpdbIML = "/api/iml";
+
+    function validateAndGetFormData() {
+      const stuId = $("#stuId").val();
+      if (!stuId) return alert("Roll-No is required.") || $("#stuId").focus();
+
+      const stuName = $("#stuName").val();
+      if (!stuName) return alert("Full Name is required.") || $("#stuName").focus();
+
+      const stuClass = $("#stuClass").val();
+      if (!stuClass) return alert("Class is required.") || $("#stuClass").focus();
+
+      const stuDOB = $("#stuDOB").val();
+      if (!stuDOB) return alert("Birth-Date is required.") || $("#stuDOB").focus();
+
+      const stuAddress = $("#stuAddress").val();
+      if (!stuAddress) return alert("Address is required.") || $("#stuAddress").focus();
+
+      const stuEnrollDate = $("#stuEnrollDate").val();
+      if (!stuEnrollDate) return alert("Enrollment-Date is required.") || $("#stuEnrollDate").focus();
+
+      return JSON.stringify({
+        stuId,
+        stuName,
+        stuClass,
+        stuDOB,
+        stuAddress,
+        stuEnrollDate,
+      });
+    }
+
+    function resetForm() {
+      $("#stuForm")[0].reset();
+      $("input").prop("disabled", true);
+      $("#stuId").prop("disabled", false).focus();
+      $("#empSave, #empChange").prop("disabled", true);
+    }
+
+    function getStu() {
+      const stuId = $("#stuId").val();
+      if (!stuId) return;
+
+      const getRequest = createGET_BY_KEYRequest(connToken, stuDBName, stuRelationName, { id: stuId });
+      const result = executeCommandAtGivenBaseUrl(getRequest, jpdbBaseURL, "/api/irl");
+
+      if (result.status === 400) {
+        $("input").prop("disabled", false);
+        $("#stuId").prop("disabled", true);
+        $("#empSave").prop("disabled", false);
+      } else if (result.status === 200) {
+        const record = result.data.record;
+        $("#stuName").val(record.stuName);
+        $("#stuClass").val(record.stuClass);
+        $("#stuDOB").val(record.stuDOB);
+        $("#stuAddress").val(record.stuAddress);
+        $("#stuEnrollDate").val(record.stuEnrollDate);
+
+        $("input").prop("disabled", false);
+        $("#stuId").prop("disabled", true);
+        $("#empChange").prop("disabled", false);
+      }
+    }
+
+    function saveData() {
+      const jsonData = validateAndGetFormData();
+      if (!jsonData) return;
+
+      const putRequest = createPUTRequest(connToken, jsonData, stuDBName, stuRelationName);
+      const result = executeCommandAtGivenBaseUrl(putRequest, jpdbBaseURL, jpdbIML);
+
+      alert(result.status === 200 ? "Data saved successfully!" : "Error saving data.");
+      resetForm();
+    }
+
+    function changeData() {
+      const jsonData = validateAndGetFormData();
+      if (!jsonData) return;
+
+      const updateRequest = createUPDATERecordRequest(connToken, jsonData, stuDBName, stuRelationName, localStorage.getItem("recno"));
+      const result = executeCommandAtGivenBaseUrl(updateRequest, jpdbBaseURL, jpdbIML);
+
+      alert(result.status === 200 ? "Data updated successfully!" : "Error updating data.");
+      resetForm();
+    }
+
+    $(document).ready(() => resetForm());
+  </script>
+</body>
+</html>
